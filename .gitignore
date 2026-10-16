@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Env / secrets — never commit
+.env
+.env.*
+*.pem
+*.key
+
+# Data
+*.sqlite
+*.db
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local reference copy of the assessment brief — not part of the submission
+BRIEF.md
