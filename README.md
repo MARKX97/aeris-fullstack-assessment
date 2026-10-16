@@ -24,10 +24,11 @@ README.md
 ### Task A
 
 ```bash
-cd A
-python3 a.py < input.txt
-python3 -m pytest -q
+python3 A/main.py < input.txt     # run the CLI
+python3 -m pytest A -q            # acceptance + property + replay + perf tests
 ```
+
+See [`A/README.md`](A/README.md) for design decisions and complexity analysis.
 
 ### Task B
 
@@ -60,11 +61,15 @@ Decisions taken where the brief was ambiguous or silent.
    `RESTOCK event_id qty` — a restock is not tied to an order. Documented here because the brief
    explicitly asks for assumptions to be stated.
 2. **Task A — output format.** Per-command line is `<STATUS> <on_hand> <reserved>` (space-separated),
-   matching the example. Open reservations are printed after all commands, and the final line is
-   `OPEN <count>`, followed by one line per open reservation ordered by `order_id`.
+   matching the example. After all commands, the summary starts with `OPEN <count>`, followed by one
+   line per open reservation ordered by `order_id`.
 3. **Task A — malformed input.** A malformed line is reported as `REJECTED` and leaves state untouched.
    The stream continues rather than aborting, since the brief requires "no partial state changes"
    rather than termination.
+
+   The complete Task A decision list (two-layer validation and what counts as processed for
+   idempotency, header handling, empty-stream behaviour, sort order) is documented in
+   [`A/README.md`](A/README.md).
 4. **Task B — tie-breaking.** "Lexicographically smallest allocation list when sorted by
    `warehouse_id`" is read as: compare the sequences of allocated quantities in ascending
    `warehouse_id` order, element by element, preferring the smaller quantity at the first
@@ -83,7 +88,11 @@ Decisions taken where the brief was ambiguous or silent.
 
 Per the brief, every place AI-assisted tooling was used is disclosed here.
 
-> TODO — complete before submission.
+- **Task A** — AI assistant (WorkBuddy) implemented `A/main.py`, `A/test_main.py`,
+  `A/tests/gen_perf_fixture.py` and `A/README.md` from the pre-written spec/acceptance
+  documents (`A/spec.md`, `A/acceptance.md`), and ran the verification commands.
+  Ambiguity resolutions (A1–A10) were decided by the candidate and recorded in
+  `A/spec.md` §6 before implementation.
 
 ## Submission checklist
 

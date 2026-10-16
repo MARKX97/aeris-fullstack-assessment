@@ -31,3 +31,6 @@ build/
 
 # Local reference copy of the assessment brief — not part of the submission
 BRIEF.md
+
+# Generated performance fixture (regenerate via A/tests/gen_perf_fixture.py)
+A/tests/fixtures/

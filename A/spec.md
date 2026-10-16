@@ -1,7 +1,8 @@
 # Task A Spec — Inventory Reservation Ledger（库存预留账本）
 
-> 状态：Draft v1（实现前定稿）。变更需同步更新 `acceptance.md`。
+> 状态：已实现并验证（2026-10-17，17 项测试全过；证据见 `acceptance.md` §4）。变更需同步更新 `acceptance.md`。
 > 依据：`BRIEF.md` §2。本 spec 把题面转成可执行契约，并显式列出所有需要自行裁决的歧义。
+> 本次变更：补齐实现前发现的 4 个 spec 缺口，不改既有语义。
 
 ---
 
@@ -82,6 +83,10 @@
 | A4 | 解 | 语法层通过即记入幂等集合（`qty=0` 记入；`-1`/`x` 不记入） | L108 与 L123 的交集行为未定义 |
 | A5 | 解 | `order_id` 按 byte-wise 字符串序 | L128 "ordered by `order_id`" 未定义排序规则 |
 | A6 | 强 | "quantities" 仅指命令 qty；S=0 合法 | 约束分列 `0 <= S`（L135）与 `1 <= qty`（L136）；S 全文称 "initial stock" |
+| A7 | 解 | header 行只信任 `N`：恰好读 N 条命令，多余行忽略、不足则止于 EOF；header 非法（非两 token / S 或 N 非纯数字）→ stderr 一行错误 + exit 2，stdout 无输出 | 题面未定义 N 与实际行数的错配行为；N 是权威契约 |
+| A8 | 解 | 完全空输入流（0 字节）→ 仅输出 `OPEN 0`，exit 0 | 题面只定义了 N≥1；空流是最小健全行为 |
+| A9 | 解 | OPEN 段排序不可避免 O(U_o·log U_o)；性能目标勘误为 **期望 O(N + U_o·log U_o)**，E8b 的 <2s 门槛不变 | 比较排序下界；U_o ≤ N，实际影响小 |
+| A10 | 解 | R1 的"不做任何校验"指跳过 M 层；S 层失败（R3）优先于幂等查询（REJECTED 不查 processed） | 语法坏行无法可靠提取 event_id（A4 同理）；两层校验已在 §4 分层 |
 
 ## 7. 验收示例（→ 全量展开在 `acceptance.md`，此处列索引）
 
@@ -96,7 +101,7 @@
 
 ## 8. 性能目标
 
-- 时间：O(N) 期望；每条命令 O(1) 摊销（dict/set 查改）。
+- 时间：期望 O(N + U_o·log U_o)（U_o = 未结订单数 ≤ N；每条命令 O(1) 摊销，OPEN 段排序 O(U_o·log U_o)，见 A9）。
 - 空间：O(U_o + U_e)，U_o/U_e 为唯一 order_id / event_id 数。
 - I/O 用 `sys.stdin.buffer` / 批量 write，避免逐行 flush。
 - 验收门槛：N=200,000 条随机合法命令在本机 < 2s（纯 Python）。

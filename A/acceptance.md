@@ -1,6 +1,6 @@
 # Task A Acceptance — 可观测验收标准
 
-> 状态：Draft v1。每条标准必须是**可观测的 pass/fail**，禁止"工作正常"这类表述。
+> 状态：全部通过（2026-10-17，证据见 §4）。每条标准必须是**可观测的 pass/fail**，禁止"工作正常"这类表述。
 > 验收汇报格式：命令 + 真实输出 + 对应标准编号。证据缺失即视为未通过。
 
 ---
@@ -54,6 +54,9 @@ RESERVE e2 o999 1             OPEN 0
 | - | --- | --- | --- |
 | E6a | `5 3`<br>`RESERVE e1 o1 0`<br>`RESERVE e2 o1 2`<br>`RESTOCK e3 -1` | `REJECTED 5 0`<br>`OK 5 2`<br>`REJECTED 5 2`<br>`OPEN 1`<br>`o1 2` | qty=0 → 拒（R2 路径，e1 已标记） |
 | E6b | `5 3`<br>`RESERVE e1 o1 x`<br>`RESERVE e1 o1 2`<br>`FROBNICATE e9 o1 1` | `REJECTED 5 0`<br>`OK 5 2`<br>`REJECTED 5 2`<br>`OPEN 1`<br>`o1 2` | qty 非数字 → 结构非法不标记（A4），e1 首次真实执行成功；未知命令 → 拒 |
+| E6c | (empty stream) | `OPEN 0`，exit 0 | A8：空输入流 |
+| E6d | `xx` | stderr 一行错误 + exit 2，stdout 为空 | A7：header 非法 |
+| E6e | `5 1`<br>`RESERVE e1 o1 2`<br>`RESERVE e2 o1 2` | `OK 5 2`<br>`OPEN 1`<br>`o1 2` | A7：以 N 为准，多余行忽略 |
 
 ### E7 — 未结预留排序输出
 
@@ -81,15 +84,17 @@ RESERVE e2 o999 1             OPEN 0
 
 | # | 标准 |
 | - | --- |
-| A-PERF | `python3 A/main.py < A/tests/fixtures/perf_200k.txt`，`time` 实测 < 2s（记录真实耗时于下表） |
+| A-PERF | `python3 A/main.py < A/tests/fixtures/perf_200k.txt`，`time` 实测 < 2s（记录真实耗时于下表；期望 O(N + U_o·log U_o)，见 spec A9） |
 
 ## 4. 证据记录（实现后填写）
 
+环境：Apple M3 / macOS 26.5.1 / CPython 3.13.12 / pytest 9.1.1。日期：2026-10-17。
+
 | 标准 | 命令 | 实际输出/耗时 | 结果 |
 | --- | --- | --- | --- |
-| E1–E8b | `python3 -m pytest A -q` | （粘贴真实输出） | ☐ |
-| A-INV / A-REPLAY | 同上 | | ☐ |
-| A-PERF | `time python3 A/main.py < .../perf_200k.txt` | | ☐ |
+| E1–E8b | `python3 -m pytest A -q` | `17 passed in 2.24s`（10 条逐字节 fixture 用例全部通过，含官方示例 E1） | ☑ |
+| A-INV / A-REPLAY | 同上 | `test_shadow_model_invariants_on_random_stream`（10,000 条混合随机命令，影子模型逐行比对 + INV1/INV2 逐条断言）与 `test_replay_second_pass_is_all_duplicate`（重放半段全 DUPLICATE、OPEN 段一致）均通过 | ☑ |
+| A-PERF | `time python3 A/main.py < A/tests/fixtures/perf_200k.txt` | `0.26s user 0.02s system 0.294 total`（N=200,000，< 2s 门槛；fixture 由 `A/tests/gen_perf_fixture.py` 以 seed=20261017 生成，未入库，见 .gitignore） | ☑ |
 
 ## 5. Out of scope / Follow-ups
 
