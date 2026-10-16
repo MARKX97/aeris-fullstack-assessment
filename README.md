@@ -109,6 +109,12 @@ Per the brief, every place AI-assisted tooling was used is disclosed here.
   deterministic lexicographic reconstruction) and ambiguity resolutions (B1–B3) are
   recorded in `B/spec.md`; one implementation bug found by the oracle test is logged
   in `B/acceptance.md` §4.
+- **Task C** — AI assistant (WorkBuddy) authored `C/answers.md` from `C/spec.md` /
+  `C/acceptance.md`, and verified each referenced Xero documentation page live
+  (OAuth auth-flow, Tenants/Connections, API limits, Invoices model, and the official
+  Idempotent-requests best-practices page) to avoid memory-sourced API details; any
+  behaviour not confirmed in those pages is marked `Assumption` inline. All diagnosis
+  and design decisions are the candidate's and are recorded in `C/spec.md` §4/§8.
 
 ## Submission checklist
 
