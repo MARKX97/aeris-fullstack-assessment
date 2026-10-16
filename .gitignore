@@ -29,8 +29,14 @@ build/
 .idea/
 .vscode/
 
+# WorkBuddy local workspace data (memory, session state) — never commit
+.workbuddy/
+
 # Local reference copy of the assessment brief — not part of the submission
 BRIEF.md
 
 # Generated performance fixture (regenerate via A/tests/gen_perf_fixture.py)
 A/tests/fixtures/
+
+# Generated performance fixture (regenerate via B/tests/gen_perf_fixture.py)
+B/tests/fixtures/

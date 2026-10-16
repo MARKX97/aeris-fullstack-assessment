@@ -1,6 +1,6 @@
 # Task B Acceptance — 可观测验收标准
 
-> 状态：Draft v1。所有期望输出均已手工推导；实现后如与 DP 输出不一致，先怀疑本表算错并回改 spec，不得反向迁就实现。
+> 状态：v2 全部通过（2026-10-17，Apple M3 / Python 3.13.12 / pytest 9.1.1）。oracle 边界随 spec v2 修订。
 > 验收汇报格式：命令 + 真实输出 + 标准编号。
 
 ---
@@ -71,7 +71,7 @@ B 2 5 1
 
 | # | 标准 |
 | - | --- |
-| B-ORACLE | 脚本生成 ≥100 组随机小用例（W ≤ 10、Q ≤ 20、stock ≤ 10、成本 ≤ 10，固定 seed）。期望值 = 枚举全部子集（含空集）× 每子集内引理1 贪心 × 平局三元组比较。DP 输出与 oracle **全量一致**。 |
+| B-ORACLE | 脚本生成 ≥100 组随机小用例（W ≤ 8、Q ≤ 12、stock ≤ 6、成本 ≤ 8，固定 seed）。期望值 = **全分配枚举**（递归 + 剪枝，不依赖引理1）按 `(k, cost, L)` 三元组取最小。DP 输出与 oracle **逐字节全量一致**。 |
 | B-INV | 对 E-B1–E-B6 全部输出断言：`Σ a = Q`；`0 ≤ a ≤ stock`；被列出的仓 `a ≥ 1`；成本 = `Σ (fixed + a×unit)` 与首行一致；行按 id 升序。 |
 
 ## 3. 假设映射
@@ -86,9 +86,9 @@ B 2 5 1
 
 | 标准 | 命令 | 实际输出/耗时 | 结果 |
 | --- | --- | --- | --- |
-| E-B1–E-B6b | `python3 -m pytest B -q` | （粘贴真实输出） | ☐ |
-| B-ORACLE | 同上（含于测试套件） | | ☐ |
-| E-B6 性能 | `time python3 B/main.py < B/tests/fixtures/perf_max.txt` | | ☐ |
+| E-B1–E-B6b | `python3 -m pytest B -q` | `14 passed in 1.90s`（fixtures 逐字节、E-B6b 逐字节、B-INV 不变量全过） | ✅ |
+| B-ORACLE | 同上（`test_oracle_cross_validation`，150 组，seed=20261017，含 `-1` 路径） | 通过；曾抓到 1 个真实 bug（最优值搜索跨 k 比成本，违反仓数优先），修复后全量一致 | ✅ |
+| E-B6 性能 | `time python3 B/main.py < B/tests/fixtures/perf_max.txt` | 输出 `1 2000` + `W01 2000`；实测 **0.296s**（门槛 5s） | ✅ |
 
 ## 5. Out of scope / Follow-ups
 

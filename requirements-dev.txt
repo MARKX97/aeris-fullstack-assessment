@@ -1,0 +1,5 @@
+# Development dependencies for running the test suites.
+# Task A/B production code uses only the Python standard library; these
+# packages are needed only to execute `python3 -m pytest`.
+pytest>=7
+httpx>=0.24  # FastAPI TestClient dependency (used by app/backend tests)

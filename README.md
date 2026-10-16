@@ -21,6 +21,13 @@ README.md
 - Python 3.11+
 - Node.js 20+
 
+```bash
+pip install -r requirements-dev.txt   # pytest (tests) + httpx (app tests)
+```
+
+Test files share the `test_main.py` basename across task dirs; the root
+`pyproject.toml` sets `--import-mode=importlib` so no `__init__.py` is needed.
+
 ### Task A
 
 ```bash
@@ -33,10 +40,12 @@ See [`A/README.md`](A/README.md) for design decisions and complexity analysis.
 ### Task B
 
 ```bash
-cd B
-python3 b.py < input.txt
-python3 -m pytest -q
+python3 B/main.py < input.txt     # run the CLI
+python3 -m pytest B -q            # acceptance + oracle + invariant + perf tests
 ```
+
+See [`B/README.md`](B/README.md) for the DP state representation, tie-breaking
+strategy and complexity analysis.
 
 ### Task C
 
@@ -71,9 +80,10 @@ Decisions taken where the brief was ambiguous or silent.
    idempotency, header handling, empty-stream behaviour, sort order) is documented in
    [`A/README.md`](A/README.md).
 4. **Task B — tie-breaking.** "Lexicographically smallest allocation list when sorted by
-   `warehouse_id`" is read as: compare the sequences of allocated quantities in ascending
-   `warehouse_id` order, element by element, preferring the smaller quantity at the first
-   difference. _Placeholder — confirm and refine after implementing._
+   `warehouse_id`" is read as element-wise comparison of `(warehouse_id, qty)` pairs:
+   `[(A,1),(B,2)] < [(A,2),(B,1)]`, with the first differing pair deciding. Additional
+   Task B decisions (no partial fulfilment, "used" means `qty >= 1` even at zero fixed
+   cost) are documented in [`B/README.md`](B/README.md#assumptions-ambiguities-in-the-brief).
 5. **App — stock race.** _Placeholder — state the concurrency mechanism (lock / CAS / transaction)._
 
 ## Architecture notes
@@ -93,6 +103,12 @@ Per the brief, every place AI-assisted tooling was used is disclosed here.
   documents (`A/spec.md`, `A/acceptance.md`), and ran the verification commands.
   Ambiguity resolutions (A1–A10) were decided by the candidate and recorded in
   `A/spec.md` §6 before implementation.
+- **Task B** — AI assistant (WorkBuddy) implemented `B/main.py`, `B/test_main.py`,
+  `B/tests/gen_perf_fixture.py` and `B/README.md` from `B/spec.md` / `B/acceptance.md`,
+  and ran the verification commands. The algorithm choice (suffix DP + monotone deque,
+  deterministic lexicographic reconstruction) and ambiguity resolutions (B1–B3) are
+  recorded in `B/spec.md`; one implementation bug found by the oracle test is logged
+  in `B/acceptance.md` §4.
 
 ## Submission checklist
 

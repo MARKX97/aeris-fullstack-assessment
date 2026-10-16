@@ -1,6 +1,6 @@
 # Task B Spec — Fulfilment Split Optimiser（履约拆单优化器）
 
-> 状态：Draft v1（实现前定稿）。变更需同步更新 `acceptance.md`。
+> 状态：Draft v2（实现期修订：§5 公式勘误、§8 oracle 强化、§9 新增 B5/B6）。变更需同步更新 `acceptance.md`。
 > 依据：`BRIEF.md` §3。题面明说：**暴力子集枚举过不了最大用例**，且要求解释状态表示、平局策略与复杂度。
 
 ---
@@ -53,8 +53,8 @@ dp[i][k][q] = min( dp[i-1][k][q],                          # 不用仓 i
                    fixed_i + f_i(q) )                     # 用仓 i（a ≥ 1）
 其中 f_i(q) = min_{1 ≤ a ≤ min(stock_i, q)} ( a·unit_i + dp[i-1][k-1][q-a] )
 
-代数变形：令 j = q-a，则
-f_i(q) = (q-1)·unit_i + min_{ j ∈ [max(q-stock_i, 0), q-1] } ( dp[i-1][k-1][j] - j·unit_i )
+代数变形：令 j = q-a，则 a·unit_i = (q-j)·unit_i，故
+f_i(q) = q·unit_i + min_{ j ∈ [max(q-stock_i, 0), q-1] } ( dp[i-1][k-1][j] - j·unit_i )
 ```
 
 内层 min 是对数组 `g[j] = dp[...] - j·unit_i` 的**定长滑动窗口最小值**——单调双端队列 O(1) 摊销，整体 O(W·K·Q)。
@@ -84,7 +84,7 @@ f_i(q) = (q-1)·unit_i + min_{ j ∈ [max(q-stock_i, 0), q-1] } ( dp[i-1][k-1][j
 ## 8. 测试计划（Feedback Sensors）
 
 1. **官方示例**逐字节比对（E-B1）。
-2. **Oracle 交叉验证（核心）**：小规模随机用例（W ≤ 10，小 stock/Q），暴力枚举子集 + 引理1 贪心构造 + 平局规则三重比较得出期望，与 DP 输出全量比对；≥100 组随机（固定 seed）。这是平局正确性的主要防线。
+2. **Oracle 交叉验证（核心）**：小规模随机用例（W ≤ 8，Q ≤ 12，stock ≤ 6，成本 ≤ 8），**直接枚举全部可行分配**（递归 + 容量/成本剪枝），按 `(k, cost, L)` 三元组取最小作为 ground truth，与 DP 输出逐字节比对；≥100 组随机（固定 seed）。这是平局正确性的主要防线。相比"子集枚举 + 引理1 贪心"，全分配枚举不共享主算法的任何推理（连引理1 都不用），独立性最强（决策 B5）。
 3. **定向用例**：不可行 / 零库存仓 / 成本打平 / 大数量（E-B2–E-B5）。
 4. **性能**：题面上限尺寸的最坏构造（W=30、Q=2000、全仓 stock=2000），记录耗时（E-B6）。
 5. **不变量**：任意输出满足 `Σ a = Q`、`0 ≤ a_i ≤ stock_i`、被使用仓 `a_i ≥ 1`、成本公式一致。
@@ -96,8 +96,14 @@ f_i(q) = (q-1)·unit_i + min_{ j ∈ [max(q-stock_i, 0), q-1] } ( dp[i-1][k-1][j
 | B1 | 解 | 平局按 `(warehouse_id, qty)` 元组序列逐元素比较 | L178 "lexicographically smallest allocation list" 未定义 list 元素与比较粒度 |
 | B2 | 强 | `Σ stock < Q` → 输出 `-1`，无部分履约 | L193 "Print `-1` when the order cannot be fulfilled" |
 | B3 | 解 | "used" = 实际分到货（`a_i ≥ 1`），`fixed_cost=0` 亦同 | L175 "for each used warehouse" 未定义 used |
+| B5 | 强 | oracle 改为全分配枚举（不依赖引理1），保证与主算法推理零共享 | 本文件 §8；实现期发现原方案平局构造与主实现存在推理相关性 |
+| B6 | 强 | 重建用**后缀 DP**单表（`suff[i][k][q]`），仓按 id 升序预排后贪心定前缀 | 本文件 §6；前缀+后缀双表内存减半为单表（最优值直接读 `suff[0]`） |
 
-未决（非文档歧义）：B4——Python 常数因子是否需按 `k ≥ ⌈Q/max_stock⌉` 剪枝，以 E-B6 实测决定。
+勘误：初版 §5 推导中 `f_i(q)` 系数误写为 `(q-1)·unit_i`，已更正为 `q·unit_i`（`a = q-j` 直接展开可验）。
+
+~~未决~~ B4（已关闭）：E-B6 上限用例实测 0.296s（门槛 5s），无需额外剪枝。
+
+实现期缺陷记录：最优值搜索初版跨 k 比较成本（违反"仓数优先"），被 B-ORACLE case 6 捕获；修复为 k 升序取首个可达者。验证了 oracle 防线的有效性。
 
 ## 10. 交付物对照
 
