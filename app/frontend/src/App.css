@@ -45,6 +45,9 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* Keep controls compact at 1280px: without this the fieldset boxes
+     stretch across the whole info column (screenshot review fix). */
+  max-width: 560px;
 }
 
 .pdp-description {

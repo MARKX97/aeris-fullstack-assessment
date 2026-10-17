@@ -64,12 +64,14 @@
 | 前端类型/构建 | `npm run build`（含 `tsc -b`） | `✓ built in 559ms` | ✅ |
 | APP-FE-7 | `grep -rn ": any" app/frontend/src/` | 无匹配 | ✅ |
 | APP-FE-5 | aria-live / aria-busy / disabled / aria-pressed 均有 DOM 断言（见 `ProductPage.test.tsx`）；纯键盘走查（Tab/Enter/Space 全程）建议交付前人工复核一次 | 结构断言 ✅ / 键盘走查待人工 | ⚠️ 半 |
-| APP-FE-6 | 375px / 1280px 截图 | 待人工截图留档 | ☐ |
+| APP-FE-6 | 375px / 1280px 截图（用户实机走查提供） | `acceptance/screenshots/app-fe-6-375px.png`、`app-fe-6-1280px.png`：两档布局可用、无横向滚动条；截图发现的两个问题已修复（见修复记录 #3/#4） | ✅ |
 | APP-FE-8 | 已自动化：加购成功后 `In stock: 8` 就地刷新、无整页重载（product fetch 恰 1 次）、数量复位 1 | 测试绿 | ✅ |
 
 **修复记录（验证期发现）**：
 1. APP-FE-3 初版失败：受控 number input 上 "clear + 输入 3" 组合成 "13" 被钳到 10（React 会在每次按键后恢复受控值）。修复：数量输入的显示串与数值状态分离（`qtyText`），空串表示编辑中、blur 回填；同时把"切维度重置数量为 1"改为 spec §8.2 的"收敛到 [1, min(q, available)]"（原实现与 spec/验收测试矛盾）。
 2. 后端测试首跑 17 error：环境缺 `httpx` / `pytest-asyncio`（`asyncio_mode = "auto"` 所需）。依赖在 `requirements-dev.txt` 已正确声明，装齐后 17 passed。
+3. **截图走查发现：商品图全部裂图**。后端 API 返回 `/images/<sku-id>.png` 路径，但没有任何一端真正提供图片文件。修复：`app/frontend/scripts/gen_placeholders.py`（纯标准库 PNG 编码器，零依赖）生成 8 个 SKU 按颜色区分的 360×360 占位图 + `placeholder.png`，放入 `public/images/`；`curl http://localhost:5173/images/sku-red-s.png` 实测 HTTP 200 `image/png`。
+4. **截图走查发现：1280px 下 Colour/Size 的 fieldset 拉伸到整列宽**。修复：`.pdp-info { max-width: 560px }`（`App.css`）。
 
 ## 7. Out of scope / Follow-ups
 
