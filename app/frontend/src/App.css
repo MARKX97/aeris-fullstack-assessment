@@ -1,0 +1,164 @@
+/* Variant PDP layout — usable at 375px and 1280px (spec §8.3).
+ * Deliberately plain: the brief assesses behaviour and accessibility,
+ * not visual polish. Focus outlines are never removed. */
+
+.pdp {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: #1a1a1a;
+}
+
+.pdp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.pdp-header h1 {
+  font-size: 1.75rem;
+  margin: 0;
+}
+
+.pdp-cart-count {
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.pdp-body {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.pdp-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #f0f0f0;
+}
+
+.pdp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pdp-description {
+  margin: 0;
+  color: #555;
+}
+
+.pdp-option-group {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.pdp-option-group legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.pdp-option-group [role='group'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pdp-option {
+  padding: 8px 14px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pdp-option[aria-pressed='true'] {
+  border-color: #1a1a1a;
+  box-shadow: inset 0 0 0 1px #1a1a1a;
+  font-weight: 600;
+}
+
+.pdp-option:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.pdp-quantity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdp-quantity input {
+  width: 72px;
+  padding: 6px 8px;
+}
+
+.pdp-add {
+  align-self: flex-start;
+  padding: 12px 24px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #1a1a1a;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+}
+
+.pdp-add:disabled {
+  background: #999;
+  border-color: #999;
+  cursor: not-allowed;
+}
+
+.pdp-feedback {
+  margin: 0;
+}
+
+.pdp-retry {
+  align-self: flex-start;
+  padding: 8px 16px;
+}
+
+.pdp-price {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pdp-loading,
+.pdp-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: 12px;
+  font-family: system-ui, sans-serif;
+}
+
+.pdp-error [role='alert'] {
+  color: #b00020;
+}
+
+@media (max-width: 640px) {
+  .pdp-body {
+    grid-template-columns: 1fr;
+  }
+
+  .pdp-image {
+    order: -1;
+    margin: 0;
+  }
+
+  .pdp-header h1 {
+    font-size: 1.4rem;
+  }
+}

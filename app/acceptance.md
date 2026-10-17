@@ -57,11 +57,19 @@
 
 | 标准 | 命令 | 实际输出 | 结果 |
 | --- | --- | --- | --- |
-| 后端全部 | `python3 -m pytest app/backend -q` | | ☐ |
-| APP-RACE | 同上（含于测试套件） | | ☐ |
-| 前端 APP-FE-1..4 | `cd app/frontend && npm run test` | | ☐ |
-| APP-FE-5..8 | 手测 | | ☐ |
-| APP-SMOKE | README 命令 | | ☐ |
+| 后端全部 | `python3 -m pytest app/backend -q` | `17 passed in 0.52s`（Apple M3 / Python 3.13.12 / pytest 9.1.1） | ✅ |
+| APP-RACE | 同上（含于测试套件） | `test_race_final_unit_rounds` 等 3 个 race/invariant 测试在 17 个之内，全绿 | ✅ |
+| APP-SEED / APP-SMOKE | 启动 `uvicorn main:app --port 8000` + `npm run dev`（5173 代理 /api）后 curl 实测 | GET product 200（8 SKU，blue-m available=0）；POST add 201；同 key 重放 200 同 body、库存 5→3 仅扣一次；GET cart 一致；同 key 异 body 409 `IDEMPOTENCY_KEY_CONFLICT`；`quantity:"2"` 400 `VALIDATION_ERROR` | ✅ |
+| 前端 APP-FE-1..4 | `cd app/frontend && npm run test` | `Tests 6 passed (6)`（FE-1..4 + FE-8 自动化） | ✅ |
+| 前端类型/构建 | `npm run build`（含 `tsc -b`） | `✓ built in 559ms` | ✅ |
+| APP-FE-7 | `grep -rn ": any" app/frontend/src/` | 无匹配 | ✅ |
+| APP-FE-5 | aria-live / aria-busy / disabled / aria-pressed 均有 DOM 断言（见 `ProductPage.test.tsx`）；纯键盘走查（Tab/Enter/Space 全程）建议交付前人工复核一次 | 结构断言 ✅ / 键盘走查待人工 | ⚠️ 半 |
+| APP-FE-6 | 375px / 1280px 截图 | 待人工截图留档 | ☐ |
+| APP-FE-8 | 已自动化：加购成功后 `In stock: 8` 就地刷新、无整页重载（product fetch 恰 1 次）、数量复位 1 | 测试绿 | ✅ |
+
+**修复记录（验证期发现）**：
+1. APP-FE-3 初版失败：受控 number input 上 "clear + 输入 3" 组合成 "13" 被钳到 10（React 会在每次按键后恢复受控值）。修复：数量输入的显示串与数值状态分离（`qtyText`），空串表示编辑中、blur 回填；同时把"切维度重置数量为 1"改为 spec §8.2 的"收敛到 [1, min(q, available)]"（原实现与 spec/验收测试矛盾）。
+2. 后端测试首跑 17 error：环境缺 `httpx` / `pytest-asyncio`（`asyncio_mode = "auto"` 所需）。依赖在 `requirements-dev.txt` 已正确声明，装齐后 17 passed。
 
 ## 7. Out of scope / Follow-ups
 

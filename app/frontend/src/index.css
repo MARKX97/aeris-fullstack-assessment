@@ -1,0 +1,13 @@
+/* Global resets only; all component styles live in App.css.
+ * Focus outlines are intentionally never removed (spec §8.3). */
+
+:root {
+  color-scheme: light;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  background: #fafafa;
+}

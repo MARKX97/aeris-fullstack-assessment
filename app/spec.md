@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | 后端 | FastAPI + Pydantic v2，Python 3.11+ | 题面硬性 |
 | 存储 | **内存 dict**（进程内单例 Store 类） | 零配置、启动即用；并发用锁保证正确（§7）。真实部署换 DB 行锁的对应关系写入 README |
-| 前端 | Vite + React 18 + TypeScript（strict） | 轻于 Next.js，SPA 场景合适 |
+| 前端 | Vite + React 19 + TypeScript（strict） | 轻于 Next.js，SPA 场景合适；脚手架当前稳定版为 React 19，题面未锁版本（AP15） |
 | 前端测试 | Vitest + Testing Library | 题面要求 ≥3 个有意义测试；不引入 E2E 框架 |
 | 价格表示 | 整数分（cents），API 序列化为 `"29.90"` 字符串或分值 | 杜绝浮点比较错误 |
 
@@ -196,6 +196,7 @@ app/frontend/src/
 | AP12 | 解 | quantity 为 JSON 整数字面量（Pydantic strict）；幂等键查找先于业务校验（同 key 不同 body → 409，不落入 SKU_NOT_FOUND） | 题面 L329 只约束「不得重复添加」，未定义键检查时机 |
 | AP13 | 强 | 防超卖临界区内保留 `await asyncio.sleep(0)`，保证 APP-RACE 测试可证伪 | 测试需真实竞争，asyncio 单线程无 yield 点则锁不可争用 |
 | AP14 | 解 | 同 SKU 不同幂等键的加购合并为同一购物车行（数量累加、行金额重算），每次成功仍独立扣库存、独立记幂等 | 题面未定义购物车行合并规则 |
+| AP15 | 解 | 前端用 React 19（当前脚手架稳定版），题面只要求 React + TypeScript | 题面未锁 React 大版本 |
 
 ## 11. 交付物对照
 

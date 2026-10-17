@@ -14,15 +14,11 @@ README.md
 
 ## Setup
 
-> TODO — document exact commands once each part is implemented.
-
-### Requirements
-
 - Python 3.11+
 - Node.js 20+
 
 ```bash
-pip install -r requirements-dev.txt   # pytest (tests) + httpx (app tests)
+pip install -r requirements-dev.txt   # pytest + pytest-asyncio + httpx (test deps)
 ```
 
 Test files share the `test_main.py` basename across task dirs; the root
@@ -62,6 +58,13 @@ python3 -m pytest app/backend -q
 
 # frontend (http://localhost:5173, proxies /api to the backend)
 cd app/frontend && npm install && npm run dev
+
+# frontend tests (variant resolution, double-click guard, quantity
+# convergence, error recovery, stale-stock refresh)
+cd app/frontend && npm run test
+
+# frontend type-check + production build (tsc -b, strict, zero `any`)
+cd app/frontend && npm run build
 ```
 
 #### Backend API contract
@@ -115,15 +118,49 @@ Decisions taken where the brief was ambiguous or silent.
    `[(A,1),(B,2)] < [(A,2),(B,1)]`, with the first differing pair deciding. Additional
    Task B decisions (no partial fulfilment, "used" means `qty >= 1` even at zero fixed
    cost) are documented in [`B/README.md`](B/README.md#assumptions-ambiguities-in-the-brief).
-5. **App — stock race.** _Placeholder — state the concurrency mechanism (lock / CAS / transaction)._
+5. **App — stock race.** The reserve path (idempotency lookup → stock check →
+   decrement → record) runs inside a single `asyncio.Lock` critical section.
+   The check and the decrement can never interleave, so there is no TOCTOU
+   window; two concurrent requests for the final unit yield exactly one 201
+   and one 409. A deliberate `await asyncio.sleep(0)` inside the critical
+   section keeps the race test falsifiable under the single-threaded event
+   loop (without a yield point the lock could never be contended and the test
+   would silently degrade to a sequential one). Idempotency-key lookup happens
+   *before* business validation: a replayed key with a different body returns
+   409 `IDEMPOTENCY_KEY_CONFLICT` even when the new body is otherwise invalid.
 
 ## Architecture notes
 
-> TODO
+**App (`app/`)** — FastAPI + Pydantic v2 backend with an in-process,
+in-memory `Store` (dict-based). The mapping to a production deployment:
+
+| In-memory implementation (this repo) | Production equivalent |
+| --- | --- |
+| `asyncio.Lock` around check+reserve | DB row lock / transaction, or an atomic `UPDATE skus SET available = available - ? WHERE id = ? AND available >= ?` |
+| Idempotency cache: `dict[key] = (fingerprint, response)` in process memory | Persistent table keyed by `Idempotency-Key` with a TTL, cleaned by a background job |
+| Anonymous single cart | Carts keyed by session/user (auth explicitly out of scope per the brief) |
+
+The frontend is a Vite + React 19 + TypeScript SPA layered as
+`api/` (typed fetch wrapper, structured errors), `domain/` (pure SKU
+resolution / combination-matrix / quantity logic) and `ui/` (state
+orchestration only). The Vite dev server proxies `/api` to the backend, so no
+CORS configuration exists in the backend — intentional for a same-origin
+deployment.
+
+Full API contract with request/response examples: `app/spec.md` §5; the
+running service also serves generated OpenAPI docs at `/docs`.
 
 ## Known limitations
 
-> TODO
+- **App idempotency cache and cart are in-memory and per-process**: a backend
+  restart forgets carts and idempotency records. Accepted per the brief
+  (in-memory storage explicitly allowed); swap the Store for a database to
+  remove this.
+- **App a11y**: structural accessibility (aria-live, aria-busy, aria-pressed,
+  focus outlines) is asserted in tests; a manual pure-keyboard walkthrough and
+  375px/1280px screenshots are listed as pending in `app/acceptance.md` §6.
+- **Task A/B** perf fixtures (4 MB) are generated, not committed; regenerate
+  with the checked-in generators if needed.
 
 ## AI assistance disclosure
 
@@ -146,6 +183,15 @@ Per the brief, every place AI-assisted tooling was used is disclosed here.
   Idempotent-requests best-practices page) to avoid memory-sourced API details; any
   behaviour not confirmed in those pages is marked `Assumption` inline. All diagnosis
   and design decisions are the candidate's and are recorded in `C/spec.md` §4/§8.
+- **Task app** — AI assistant (WorkBuddy) implemented the FastAPI backend
+  (`app/backend/main.py`, `store.py`, 17 tests) and the React/TypeScript
+  frontend (`app/frontend/`, 6 tests) from `app/spec.md` / `app/acceptance.md`,
+  and ran the verification commands. One frontend bug (controlled number-input
+  composing "clear + 3" into a clamped 13) and one spec deviation
+  (quantity reset instead of convergence on SKU switch) were caught by the
+  APP-FE-3 test and fixed; both are logged in `app/acceptance.md` §6.
+  All design decisions (AP1–AP15) are the candidate's and were recorded in
+  `app/spec.md` §10 before implementation.
 
 ## Submission checklist
 
