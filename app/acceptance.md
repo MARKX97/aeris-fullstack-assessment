@@ -20,11 +20,12 @@
 | APP-API-3 | `POST /api/cart/items` `{skuId: "sku-red-m", quantity: 2}` 带新 key | 201；`totalItemCount: 2`；库存 5→3 |
 | APP-API-4 | 同 key 同 body 重发 | **200**；与首次响应 body 一致；库存**不再**下降 |
 | APP-API-5 | 同 key 换 body 重发 | 409 + `IDEMPOTENCY_KEY_CONFLICT` |
-| APP-API-6 | `quantity: 0` / `-1` / `1.5` / 带额外 `price` 字段 | 400 + `VALIDATION_ERROR` |
+| APP-API-6 | `quantity: 0` / `-1` / `1.5` / `2.0` / `"2"` / 带额外 `price` 字段 | 400 + `VALIDATION_ERROR`（AP12：quantity 必须为 JSON 整数字面量） |
 | APP-API-7 | 请求 `sku-green-l`（available=2）`quantity: 3` | 409 + `INSUFFICIENT_STOCK`，`details.available = 2` |
 | APP-API-8 | 未知 `skuId` | 404 + `SKU_NOT_FOUND` |
 | APP-API-9 | 不带 `Idempotency-Key` 头 | 400 + `VALIDATION_ERROR`（幂等键必填，spec §5.2） |
 | APP-API-10 | `GET /api/cart` | 200；与 APP-API-3 之后的真实购物车一致 |
+| APP-API-11 | 同 key 换 body 重发，且新 body 含未知 skuId | 409 `IDEMPOTENCY_KEY_CONFLICT`，而**非** 404——证明键查找先于业务校验（AP12） |
 
 ## 3. 并发防超卖（High-risk，核心验收）
 

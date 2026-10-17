@@ -3,3 +3,4 @@
 # different task directories (e.g. A/test_main.py and B/test_main.py)
 # can be collected together without requiring __init__.py packages.
 addopts = "--import-mode=importlib"
+asyncio_mode = "auto"

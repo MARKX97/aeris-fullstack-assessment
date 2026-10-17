@@ -104,8 +104,11 @@
 ```
 
 - `quantity ∈ [1, available]`；`skuId` 必须存在；**价格与库存一律服务端取值**（请求体不允许带价格/库存字段，出现即 400）。
+- `quantity` 必须是 JSON 整数字面量（Pydantic strict 模式）：`"2"`、`1.5`、`2.0` 一律 400 `VALIDATION_ERROR`（AP12）。
+- 幂等键查找先于业务校验：key 已命中 → 直接重放或 409 `IDEMPOTENCY_KEY_CONFLICT`，**优先于** `SKU_NOT_FOUND` / `INSUFFICIENT_STOCK`（AP12）。
 - 幂等语义：key + payload 指纹（规范化 JSON）相同 → 不重复扣减，返回与首次相同的 body（状态码 200）；key 相同 payload 不同 → 409 `IDEMPOTENCY_KEY_CONFLICT`。
 - 库存不足 → 409 `INSUFFICIENT_STOCK`，`details` 携带 `{ "available": <n> }`。
+- 同一 SKU 以**不同**幂等键再次加购 → 合并为同一购物车行（数量累加，行金额重算）；每次成功加购仍独立扣库存、独立记幂等（AP14）。
 
 ### 5.3 `GET /api/cart` → 200
 
@@ -120,6 +123,7 @@
 ## 7. 并发防超卖规格（High-risk，题面明文要求解释）
 
 - 机制：`asyncio.Lock`（进程内单锁）保护「查库存 → 校验 → 扣减 → 记幂等」整段临界区。检查与扣减**必须同一临界区**，杜绝 TOCTOU。
+- **可证伪性（AP13）**：asyncio 单线程事件循环中，若临界区内部无 await 点，则锁永不被争用（任务不可中途切换），APP-RACE 测试将退化成纯顺序测试。因此临界区内**必须保留一个受锁保护的 `await asyncio.sleep(0)`**——让出控制权一次，使两个并发请求真正在锁上排队，测试对「单线程实现中被跳过的竞争」保持可证伪。真实多进程部署下该 yield 点不影响正确性（换 DB 行锁后此机制整体替换）。
 - 为什么可以单锁：单进程内存存储 + 单商品场景，锁粒度全局即可满足正确性；真实多商品/多实例部署改为「DB 事务 + 行锁（或原子 UPDATE ... WHERE available >= ?）」，对应关系写入 README 的 Architecture notes。
 - 验收：两个并发请求抢最后 1 件 → 恰好一个 201、一个 409，终态 available=0（见 `acceptance.md` APP-RACE）。
 
@@ -189,6 +193,9 @@ app/frontend/src/
 | AP6 | 解 | 幂等缓存随进程存亡（非持久化），已知限制 | L302 允许 in-memory；L329 仅约束"不得重复添加" |
 | AP7 | 解 | 价格以整数分传输，展示层格式化 | L313/L326 未定义金额单位 |
 | AP8 | 解 | 开发期 Vite proxy，不加 CORS | 文档未涉及 |
+| AP12 | 解 | quantity 为 JSON 整数字面量（Pydantic strict）；幂等键查找先于业务校验（同 key 不同 body → 409，不落入 SKU_NOT_FOUND） | 题面 L329 只约束「不得重复添加」，未定义键检查时机 |
+| AP13 | 强 | 防超卖临界区内保留 `await asyncio.sleep(0)`，保证 APP-RACE 测试可证伪 | 测试需真实竞争，asyncio 单线程无 yield 点则锁不可争用 |
+| AP14 | 解 | 同 SKU 不同幂等键的加购合并为同一购物车行（数量累加、行金额重算），每次成功仍独立扣库存、独立记幂等 | 题面未定义购物车行合并规则 |
 
 ## 11. 交付物对照
 

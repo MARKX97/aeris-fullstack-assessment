@@ -1,5 +1,7 @@
 # Development dependencies for running the test suites.
 # Task A/B production code uses only the Python standard library; these
 # packages are needed only to execute `python3 -m pytest`.
+# App backend production deps live in app/backend/requirements.txt.
 pytest>=7
-httpx>=0.24  # FastAPI TestClient dependency (used by app/backend tests)
+pytest-asyncio>=0.23  # async API tests (app/backend)
+httpx>=0.24  # ASGITransport client (used by app/backend tests)

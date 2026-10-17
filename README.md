@@ -54,12 +54,43 @@ Written answers: [`C/answers.md`](C/answers.md)
 ### App
 
 ```bash
-# backend
+# backend (http://127.0.0.1:8000)
 cd app/backend && pip install -r requirements.txt && uvicorn main:app --reload
 
-# frontend
+# backend tests: contract + idempotency + stock-race (from the repo root)
+python3 -m pytest app/backend -q
+
+# frontend (http://localhost:5173, proxies /api to the backend)
 cd app/frontend && npm install && npm run dev
 ```
+
+#### Backend API contract
+
+The add-to-cart endpoint requires an `Idempotency-Key` header. Replaying
+the same key with the same body returns **200** with the identical body and
+does not decrement stock again; the same key with a different body returns
+**409**. Structured errors all share the shape
+`{"error": {"code", "message", "details"}}`:
+
+| Status | Code | When |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | Malformed body, non-integer or `< 1` quantity, extra fields such as a client-supplied `price`, missing `Idempotency-Key` |
+| 404 | `PRODUCT_NOT_FOUND` / `SKU_NOT_FOUND` | Unknown product / SKU id |
+| 409 | `INSUFFICIENT_STOCK` | Requested quantity exceeds available; `details.available` carries the true stock |
+| 409 | `IDEMPOTENCY_KEY_CONFLICT` | Key reused with a different body |
+| 500 | `INTERNAL_ERROR` | Unexpected failure (no stack traces in the response) |
+
+Full request/response examples: FastAPI's generated OpenAPI page at
+`/docs` supplements the explanations in `app/spec.md` §5 and this section.
+
+#### Stock-race safety
+
+Two concurrent requests for the final unit produce exactly one **201** and
+one **409**. The whole idempotency-lookup → stock-check → reserve → record
+path runs inside one `asyncio.Lock` critical section; the check and the
+decrement can never interleave, so no TOCTOU window exists. See
+"Architecture notes" below for the production-scale correspondence (DB row
+locks / atomic conditional updates).
 
 ## Assumptions
 
