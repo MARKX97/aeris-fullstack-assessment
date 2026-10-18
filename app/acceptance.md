@@ -60,6 +60,7 @@
 | 后端全部 | `python3 -m pytest app/backend -q` | `17 passed in 0.52s`（Apple M3 / Python 3.13.12 / pytest 9.1.1） | ✅ |
 | APP-RACE | 同上（含于测试套件） | `test_race_final_unit_rounds` 等 3 个 race/invariant 测试在 17 个之内，全绿 | ✅ |
 | APP-SEED / APP-SMOKE | 启动 `uvicorn main:app --port 8000` + `npm run dev`（5173 代理 /api）后 curl 实测 | GET product 200（8 SKU，blue-m available=0）；POST add 201；同 key 重放 200 同 body、库存 5→3 仅扣一次；GET cart 一致；同 key 异 body 409 `IDEMPOTENCY_KEY_CONFLICT`；`quantity:"2"` 400 `VALIDATION_ERROR` | ✅ |
+| APP-SMOKE（干净检出复跑） | `git clone` 本地仓库 → 全新 venv（按 README 装 requirements-dev.txt + app/backend/requirements.txt）→ 全新 `npm install` → 起 uvicorn+vite → curl | `pytest A B app/backend -q` → **48 passed in 5.32s**（A/B perf fixture 自动重建）；前端 `npm run test` → 6 passed、`npm run build` 通过；页面/代理 API/占位图/加购全 200/201 | ✅ |
 | 前端 APP-FE-1..4 | `cd app/frontend && npm run test` | `Tests 6 passed (6)`（FE-1..4 + FE-8 自动化） | ✅ |
 | 前端类型/构建 | `npm run build`（含 `tsc -b`） | `✓ built in 559ms` | ✅ |
 | APP-FE-7 | `grep -rn ": any" app/frontend/src/` | 无匹配 | ✅ |

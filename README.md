@@ -15,7 +15,9 @@ README.md
 ## Setup
 
 - Python 3.11+
-- Node.js 20+
+- Node.js 22.12+ (Vite 8 needs `^20.19 || >=22.12`; the test runner
+  Vitest 5 needs `^22.12 || ^24 || >=26`, so Node 20 cannot run the
+  frontend test suite)
 
 ```bash
 pip install -r requirements-dev.txt   # pytest + pytest-asyncio + httpx (test deps)
@@ -200,8 +202,12 @@ Per the brief, every place AI-assisted tooling was used is disclosed here.
 ## Submission checklist
 
 - [ ] Repository access verified
-- [ ] Setup commands tested from a clean checkout
-- [ ] Automated tests pass
-- [ ] Assumptions documented
-- [ ] AI assistance disclosed
-- [ ] No secrets committed
+- [x] Setup commands tested from a clean checkout (`git clone` + fresh venv
+      + fresh `npm install`: 48 backend tests, 6 frontend tests, build, and a
+      full add-to-cart smoke all pass; evidence in `app/acceptance.md` §6)
+- [x] Automated tests pass (`pytest A B app/backend -q` → 48 passed;
+      `npm run test` → 6 passed)
+- [x] Assumptions documented (this file + per-task spec/README)
+- [x] AI assistance disclosed (section above)
+- [x] No secrets committed (`git ls-files` scan clean; `.gitignore` excludes
+      `.env*`, `*.pem`, `*.key`)
